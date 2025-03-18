@@ -29,6 +29,21 @@ MimiEQAudioProcessor::~MimiEQAudioProcessor()
 }
 
 //==============================================================================
+ChainSettings getChainSettings(juce::AudioProcessorValueTreeState& apvts) {
+    ChainSettings chainSettings;
+    
+    chainSettings.lowCutFreq    = apvts.getRawParameterValue("LowCut Freq")->load();
+    chainSettings.lowCutSlope   = apvts.getRawParameterValue("LowCut Slope")->load();
+    chainSettings.highCutFreq   = apvts.getRawParameterValue("HighCut Freq")->load();
+    chainSettings.highCutSlope  = apvts.getRawParameterValue("HighCut Slope")->load();
+    chainSettings.peakFreq      = apvts.getRawParameterValue("Peak Freq")->load();
+    chainSettings.peakQuality   = apvts.getRawParameterValue("Peak Quality")->load();
+    chainSettings.peakGainDb    = apvts.getRawParameterValue("Peak Gain")->load();
+    
+    return chainSettings;
+}
+
+//==============================================================================
 const juce::String MimiEQAudioProcessor::getName() const
 {
     return JucePlugin_Name;
@@ -104,6 +119,17 @@ void MimiEQAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
     
     leftChain.prepare(spec);
     rightChain.prepare(spec);
+    
+    auto chainSettings = getChainSettings(apvts);
+    // creates a filter out of the current settings of the GUI
+    auto peakCoeffs = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate,
+                                                                          chainSettings.peakFreq,
+                                                                          chainSettings.peakQuality,
+                                                                          juce::Decibels::decibelsToGain(chainSettings.peakGainDb));
+    
+    // access links in the processor chain
+    *leftChain.get<ChainPositions::Peak>().coefficients = *peakCoeffs;
+    *rightChain.get<ChainPositions::Peak>().coefficients = *peakCoeffs;
 }
 
 void MimiEQAudioProcessor::releaseResources()
@@ -153,6 +179,17 @@ void MimiEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
     
+    // update the parameter coefficients first before processing the audio
+    auto chainSettings = getChainSettings(apvts);
+    // creates a filter out of the current settings of the GUI
+    auto peakCoeffs = juce::dsp::IIR::Coefficients<float>::makePeakFilter(getSampleRate(),
+                                                                          chainSettings.peakFreq,
+                                                                          chainSettings.peakQuality,
+                                                                          juce::Decibels::decibelsToGain(chainSettings.peakGainDb));
+    
+    *leftChain.get<ChainPositions::Peak>().coefficients = *peakCoeffs;
+    *rightChain.get<ChainPositions::Peak>().coefficients = *peakCoeffs;
+    
     juce::dsp::AudioBlock<float> block(buffer);
     
     auto leftBlock = block.getSingleChannelBlock(0);
@@ -171,12 +208,12 @@ void MimiEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
     // the samples and the outer loop is handling the channels.
     // Alternatively, you can process the samples with the channels
     // interleaved by keeping the same state.
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
-    {
-        auto* channelData = buffer.getWritePointer (channel);
-
-        // ..do something to the data...
-    }
+//    for (int channel = 0; channel < totalNumInputChannels; ++channel)
+//    {
+//        auto* channelData = buffer.getWritePointer (channel);
+//
+//        // ..do something to the data...
+//    }
 }
 
 //==============================================================================
@@ -222,7 +259,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout MimiEQAudioProcessor::create
                                                            20000.0f));
     layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID("Peak Freq", 1),
                                                            "Peak Freq",
-                                                           juce::NormalisableRange<float>(20.0f, 20000.0f, 1.0f, 1.0f),
+                                                           juce::NormalisableRange<float>(20.0f, 20000.0f, 1.0f, 0.5f),
                                                            750.0f));
     layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID("Peak Gain", 1),
                                                            "Peak Gain",

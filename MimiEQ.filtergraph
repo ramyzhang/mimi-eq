@@ -31,7 +31,7 @@
       </OUTPUTS>
     </LAYOUT>
   </FILTER>
-  <FILTER uid="3" x="0.5" y="0.9" useARA="0">
+  <FILTER uid="3" x="0.47625" y="0.9019230769230769" useARA="0">
     <PLUGIN name="Audio Output" descriptiveName="" format="Internal" category="I/O devices"
             manufacturer="JUCE" version="1.0" file="" uniqueId="724248cb"
             isInstrument="0" fileTime="0" infoUpdateTime="0" numInputs="1"
@@ -61,10 +61,10 @@
       </OUTPUTS>
     </LAYOUT>
   </FILTER>
-  <FILTER uid="5" x="0.4125" y="0.6" useARA="0">
+  <FILTER uid="5" x="0.47875" y="0.6057692307692307" useARA="0">
     <PLUGIN name="MimiEQ" format="VST3" category="Fx" manufacturer="Mimimosa"
             version="1.0.0" file="/Users/ramyzhang/Library/Audio/Plug-Ins/VST3/MimiEQ.vst3"
-            uniqueId="fba5e72d" isInstrument="0" fileTime="1950bb6c87f" infoUpdateTime="1950bbaa991"
+            uniqueId="fba5e72d" isInstrument="0" fileTime="1950bbbdc97" infoUpdateTime="19511b1763c"
             numInputs="2" numOutputs="2" isShell="0" hasARAExtension="0"
             uid="acf94cb7"/>
     <STATE>191.VMjLgXK....O+fWarAhckI2bo8la8HRLt.iHfTlai8FYo41Y8HRUTYTK3HxO9.BOVMEUy.Ea0cVZtMEcgQWY9vSRC8Vav8lak4Fc9XCLt3hKt3hKt3hKt3hYRUUSTEETIckVwTjQisVTTgkdEYjKAQjYPQSPWgUdMcjKAQjct3hdA4hKt3hKt3hKtnTUv.UQAslXuk0UXoWUFE0YQcEV77RRC8Vav8lak4Fc9vyKVMEUy.Ea0cVZtMEcgQWY9..</STATE>
@@ -77,14 +77,14 @@
       </OUTPUTS>
     </LAYOUT>
   </FILTER>
-  <FILTER uid="6" x="0.31375" y="0.3423076923076923" useARA="0" uiLastX_Normal="274"
+  <FILTER uid="6" x="0.50625" y="0.3269230769230769" useARA="0" uiLastX_Normal="274"
           uiLastY_Normal="411" uiopen_Normal="0">
     <PLUGIN name="AUAudioFilePlayer" format="AudioUnit" category="Generator"
             manufacturer="Apple" version="1.6.0" file="AudioUnit:Generators/augn,afpl,appl"
-            uniqueId="6163676e" isInstrument="0" fileTime="0" infoUpdateTime="1950bbaa991"
+            uniqueId="6163676e" isInstrument="0" fileTime="0" infoUpdateTime="19511b1763c"
             numInputs="0" numOutputs="2" isShell="0" hasARAExtension="0"
             uid="6163676e"/>
-    <STATE>539.hAGaoMGcv.C1AHv.DTfAGfPBJr.Gc3wGgvUag4VclE1XzUmbkIGUjEFcg8EDarVPUAkbkMWYzAUYxMWZyQWYtQ2TzEFcksTY4c0b0IFc4AWYWYWYxMWZu4FUzkGbk8EDOXVZrUVKxUlYkIWYtMVYyQkag0VYRDFbvwFPgxvzM3vCPDQFXYTZrUlSg0VYWIUYmk1atMmWIM2TkwVYiQWYjYTZrU1WPzxKUMWYxM2KxEVa4oGZg41YuPza24FauEFYy8hPgw1Xu4VdffhLvHSMo3RavMSnRP8DTTgEWfQFZ3kTkcVZu4FQuU1bL81avokTkcVZu4FQgQWXeAADIM2TkwVYiQWYjIUYmk1atokTkcVZu4lSg0VYH7DDvA..........f1KQB..X...................XiaTP..........fixGYCNPIj.uen.HYV34KuA....noalEF.....................................+++2+C...........9d8.7++u+WBZ4TY2AhTkcVZu4VBRDlYvwFD.HQX0claQCBDVYTZrUFHwfUUtQWZzwVYjA.B.jA.l.vJ.jD.QAPV.3E.vAPc.nG.6APe.PH.MBPk.PJ.TCf0.7M.tCP9AvP.WD.FArX.LFvkAfY.cFvmAPZ.mFfq........BD..........h...................AbK</STATE>
+    <STATE>539.hAGaoMGcv.C1AHv.DTfAGfPBJr.Gc3wGgvUag4VclE1XzUmbkIGUjEFcg8EDarVPUAkbkMWYzAUYxMWZyQWYtQ2TzEFcksTY4c0b0IFc4AWYWYWYxMWZu4FUzkGbk8EDOXVZrUVKxUlYkIWYtMVYyQkag0VYRDFbvwFPgxvzM3vCPDQFXYTZrUlSg0VYWIUYmk1atMmWIM2TkwVYiQWYjYTZrU1WPzxKUMWYxM2KxEVa4oGZg41YuPza24FauEFYy8hPgw1Xu4VdffhLvHSMo3RavMSnRP8DTTgEWfQFZnkTkcVZu4lSg0VYZIUYmk1atQTXzE1WP.QRyMUYrU1XzUFYRU1Yo8ladIUYmk1atQzakMGSu8FbZ4TY2AhTkcVZu41SP.G...........ZuDI..fA..................fMtQAA..........NJejM3.kPB79gBfjYgmu7F....fltYVX.....................................7++e+O...........360Cv+++9eIfPBRDlYvwFD.HQX0claQCBDVYTZrUFHwfUUtQWZzwVYjA.B.jA.l.vJ.jD.QAPV.3E.vAPc.nG.6APe.PH.MBPk.PJ.TCf0.7M.pCP8AfP.WDfHATY.VFvkAfY.cFvmAPZ.mFfq........BD..........h...................AbK</STATE>
     <LAYOUT>
       <INPUTS/>
       <OUTPUTS>
