@@ -17,6 +17,13 @@ enum Slope {
     SLOPE_48
 };
 
+enum ChainPositions
+{
+    LowCut,
+    Peak,
+    HighCut
+};
+
 struct ChainSettings
 {
     float peakFreq { 0 }, peakGainDb { 0 }, peakQuality { 1.0f };
@@ -89,12 +96,10 @@ private:
     
     MonoChain leftChain, rightChain;
     
-    enum ChainPositions
-    {
-        LowCut,
-        Peak,
-        HighCut
-    };
+    void configurePeakChainCoefficients(const double& sampleRate, const ChainSettings& chainSettings);
+    
+    template <ChainPositions P, typename Coefficients>
+    void configureCutChainCoefficients(MonoChain* chain, const Coefficients& cutCoeffs, const Slope& cutSlope);
     
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MimiEQAudioProcessor)

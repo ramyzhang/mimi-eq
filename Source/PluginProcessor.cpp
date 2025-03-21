@@ -122,115 +122,23 @@ void MimiEQAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
     
     auto chainSettings = getChainSettings(apvts);
     // creates a filter out of the current settings of the GUI
-    auto peakCoeffs = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate,
-                                                                          chainSettings.peakFreq,
-                                                                          chainSettings.peakQuality,
-                                                                          juce::Decibels::decibelsToGain(chainSettings.peakGainDb));
-    
-    // access links in the processor chain
-    *leftChain.get<ChainPositions::Peak>().coefficients = *peakCoeffs;
-    *rightChain.get<ChainPositions::Peak>().coefficients = *peakCoeffs;
+    configurePeakChainCoefficients(sampleRate, chainSettings);
     
     // we have four slope options
     // the highpass butterworth filter function requires you to submit an "order" of filter
     // and will return one filter for each multiple of 2
     // hence we multiply the slope index by 2
-    auto cutCoeffs = juce::dsp::FilterDesign<float>::designIIRHighpassHighOrderButterworthMethod(chainSettings.lowCutFreq,
-                                                                                                 sampleRate,
-                                                                                                 2 * (chainSettings.lowCutSlope + 1));
-    auto& leftLowCut = leftChain.get<ChainPositions::LowCut>();
+    auto lowCutCoeffs = juce::dsp::FilterDesign<float>::designIIRHighpassHighOrderButterworthMethod(chainSettings.lowCutFreq,
+                                                                                                    sampleRate,
+                                                                                                    2 * (chainSettings.lowCutSlope + 1));
+    configureCutChainCoefficients<ChainPositions::LowCut>(&leftChain, lowCutCoeffs, chainSettings.lowCutSlope);
+    configureCutChainCoefficients<ChainPositions::LowCut>(&rightChain, lowCutCoeffs, chainSettings.lowCutSlope);
     
-    // start by allowing all of them through
-    leftLowCut.setBypassed<SLOPE_12>(true);
-    leftLowCut.setBypassed<SLOPE_24>(true);
-    leftLowCut.setBypassed<SLOPE_32>(true);
-    leftLowCut.setBypassed<SLOPE_48>(true);
-    
-    switch (chainSettings.lowCutSlope) {
-        case SLOPE_12:
-        {
-            *leftLowCut.get<SLOPE_12>().coefficients = *cutCoeffs[0];
-            leftLowCut.setBypassed<SLOPE_12>(false);
-            break;
-        }
-        case SLOPE_24:
-        {
-            *leftLowCut.get<SLOPE_12>().coefficients = *cutCoeffs[0];
-            leftLowCut.setBypassed<SLOPE_12>(false);
-            *leftLowCut.get<SLOPE_24>().coefficients = *cutCoeffs[1];
-            leftLowCut.setBypassed<SLOPE_24>(false);
-            break;
-        }
-        case SLOPE_32:
-        {
-            *leftLowCut.get<SLOPE_12>().coefficients = *cutCoeffs[0];
-            leftLowCut.setBypassed<SLOPE_12>(false);
-            *leftLowCut.get<SLOPE_24>().coefficients = *cutCoeffs[1];
-            leftLowCut.setBypassed<SLOPE_24>(false);
-            *leftLowCut.get<SLOPE_32>().coefficients = *cutCoeffs[2];
-            leftLowCut.setBypassed<SLOPE_32>(false);
-            break;
-        }
-        case SLOPE_48:
-        {
-            *leftLowCut.get<SLOPE_12>().coefficients = *cutCoeffs[0];
-            leftLowCut.setBypassed<SLOPE_12>(false);
-            *leftLowCut.get<SLOPE_24>().coefficients = *cutCoeffs[1];
-            leftLowCut.setBypassed<SLOPE_24>(false);
-            *leftLowCut.get<SLOPE_32>().coefficients = *cutCoeffs[2];
-            leftLowCut.setBypassed<SLOPE_32>(false);
-            *leftLowCut.get<SLOPE_48>().coefficients = *cutCoeffs[3];
-            leftLowCut.setBypassed<SLOPE_48>(false);
-            break;
-        }
-    };
-    
-    // right channel for stereo
-    auto& rightLowCut = rightChain.get<ChainPositions::LowCut>();
-    
-    rightLowCut.setBypassed<SLOPE_12>(true);
-    rightLowCut.setBypassed<SLOPE_24>(true);
-    rightLowCut.setBypassed<SLOPE_32>(true);
-    rightLowCut.setBypassed<SLOPE_48>(true);
-    
-    switch (chainSettings.lowCutSlope) {
-        case SLOPE_12:
-        {
-            *rightLowCut.get<SLOPE_12>().coefficients = *cutCoeffs[0];
-            rightLowCut.setBypassed<SLOPE_12>(false);
-            break;
-        }
-        case SLOPE_24:
-        {
-            *rightLowCut.get<SLOPE_12>().coefficients = *cutCoeffs[0];
-            rightLowCut.setBypassed<SLOPE_12>(false);
-            *rightLowCut.get<SLOPE_24>().coefficients = *cutCoeffs[1];
-            rightLowCut.setBypassed<SLOPE_24>(false);
-            break;
-        }
-        case SLOPE_32:
-        {
-            *rightLowCut.get<SLOPE_12>().coefficients = *cutCoeffs[0];
-            rightLowCut.setBypassed<SLOPE_12>(false);
-            *rightLowCut.get<SLOPE_24>().coefficients = *cutCoeffs[1];
-            rightLowCut.setBypassed<SLOPE_24>(false);
-            *rightLowCut.get<SLOPE_32>().coefficients = *cutCoeffs[2];
-            rightLowCut.setBypassed<SLOPE_32>(false);
-            break;
-        }
-        case SLOPE_48:
-        {
-            *rightLowCut.get<SLOPE_12>().coefficients = *cutCoeffs[0];
-            rightLowCut.setBypassed<SLOPE_12>(false);
-            *rightLowCut.get<SLOPE_24>().coefficients = *cutCoeffs[1];
-            rightLowCut.setBypassed<SLOPE_24>(false);
-            *rightLowCut.get<SLOPE_32>().coefficients = *cutCoeffs[2];
-            rightLowCut.setBypassed<SLOPE_32>(false);
-            *rightLowCut.get<SLOPE_48>().coefficients = *cutCoeffs[3];
-            rightLowCut.setBypassed<SLOPE_48>(false);
-            break;
-        }
-    }
+    auto highCutCoeffs = juce::dsp::FilterDesign<float>::designIIRLowpassHighOrderButterworthMethod(chainSettings.highCutFreq,
+                                                                                                    sampleRate,
+                                                                                                    2 * (chainSettings.highCutSlope + 1));
+    configureCutChainCoefficients<ChainPositions::HighCut>(&leftChain, highCutCoeffs, chainSettings.highCutSlope);
+    configureCutChainCoefficients<ChainPositions::HighCut>(&rightChain, highCutCoeffs, chainSettings.highCutSlope);
 }
 
 void MimiEQAudioProcessor::releaseResources()
@@ -284,110 +192,18 @@ void MimiEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
     auto chainSettings = getChainSettings(apvts);
     
     // creates a filter out of the current settings of the GUI
-    auto peakCoeffs = juce::dsp::IIR::Coefficients<float>::makePeakFilter(getSampleRate(),
-                                                                          chainSettings.peakFreq,
-                                                                          chainSettings.peakQuality,
-                                                                          juce::Decibels::decibelsToGain(chainSettings.peakGainDb));
-    
-    *leftChain.get<ChainPositions::Peak>().coefficients = *peakCoeffs;
-    *rightChain.get<ChainPositions::Peak>().coefficients = *peakCoeffs;
-    
-    auto cutCoeffs = juce::dsp::FilterDesign<float>::designIIRHighpassHighOrderButterworthMethod(chainSettings.lowCutFreq,
+    configurePeakChainCoefficients(getSampleRate(), chainSettings);
+    auto lowCutCoeffs = juce::dsp::FilterDesign<float>::designIIRHighpassHighOrderButterworthMethod(chainSettings.lowCutFreq,
                                                                                                  getSampleRate(),
                                                                                                  2 * (chainSettings.lowCutSlope + 1));
-    auto& leftLowCut = leftChain.get<ChainPositions::LowCut>();
+    configureCutChainCoefficients<ChainPositions::LowCut>(&leftChain, lowCutCoeffs, chainSettings.lowCutSlope);
+    configureCutChainCoefficients<ChainPositions::LowCut>(&rightChain, lowCutCoeffs, chainSettings.lowCutSlope);
     
-    // start by allowing all of them through
-    leftLowCut.setBypassed<SLOPE_12>(true);
-    leftLowCut.setBypassed<SLOPE_24>(true);
-    leftLowCut.setBypassed<SLOPE_32>(true);
-    leftLowCut.setBypassed<SLOPE_48>(true);
-    
-    switch (chainSettings.lowCutSlope) {
-        case SLOPE_12:
-        {
-            *leftLowCut.get<SLOPE_12>().coefficients = *cutCoeffs[0];
-            leftLowCut.setBypassed<SLOPE_12>(false);
-            break;
-        }
-        case SLOPE_24:
-        {
-            *leftLowCut.get<SLOPE_12>().coefficients = *cutCoeffs[0];
-            leftLowCut.setBypassed<SLOPE_12>(false);
-            *leftLowCut.get<SLOPE_24>().coefficients = *cutCoeffs[1];
-            leftLowCut.setBypassed<SLOPE_24>(false);
-            break;
-        }
-        case SLOPE_32:
-        {
-            *leftLowCut.get<SLOPE_12>().coefficients = *cutCoeffs[0];
-            leftLowCut.setBypassed<SLOPE_12>(false);
-            *leftLowCut.get<SLOPE_24>().coefficients = *cutCoeffs[1];
-            leftLowCut.setBypassed<SLOPE_24>(false);
-            *leftLowCut.get<SLOPE_32>().coefficients = *cutCoeffs[2];
-            leftLowCut.setBypassed<SLOPE_32>(false);
-            break;
-        }
-        case SLOPE_48:
-        {
-            *leftLowCut.get<SLOPE_12>().coefficients = *cutCoeffs[0];
-            leftLowCut.setBypassed<SLOPE_12>(false);
-            *leftLowCut.get<SLOPE_24>().coefficients = *cutCoeffs[1];
-            leftLowCut.setBypassed<SLOPE_24>(false);
-            *leftLowCut.get<SLOPE_32>().coefficients = *cutCoeffs[2];
-            leftLowCut.setBypassed<SLOPE_32>(false);
-            *leftLowCut.get<SLOPE_48>().coefficients = *cutCoeffs[3];
-            leftLowCut.setBypassed<SLOPE_48>(false);
-            break;
-        }
-    }
-    
-    // right channel for stereo
-    auto& rightLowCut = rightChain.get<ChainPositions::LowCut>();
-    
-    rightLowCut.setBypassed<SLOPE_12>(true);
-    rightLowCut.setBypassed<SLOPE_24>(true);
-    rightLowCut.setBypassed<SLOPE_32>(true);
-    rightLowCut.setBypassed<SLOPE_48>(true);
-    
-    switch (chainSettings.lowCutSlope) {
-        case SLOPE_12:
-        {
-            *rightLowCut.get<SLOPE_12>().coefficients = *cutCoeffs[0];
-            rightLowCut.setBypassed<SLOPE_12>(false);
-            break;
-        }
-        case SLOPE_24:
-        {
-            *rightLowCut.get<SLOPE_12>().coefficients = *cutCoeffs[0];
-            rightLowCut.setBypassed<SLOPE_12>(false);
-            *rightLowCut.get<SLOPE_24>().coefficients = *cutCoeffs[1];
-            rightLowCut.setBypassed<SLOPE_24>(false);
-            break;
-        }
-        case SLOPE_32:
-        {
-            *rightLowCut.get<SLOPE_12>().coefficients = *cutCoeffs[0];
-            rightLowCut.setBypassed<SLOPE_12>(false);
-            *rightLowCut.get<SLOPE_24>().coefficients = *cutCoeffs[1];
-            rightLowCut.setBypassed<SLOPE_24>(false);
-            *rightLowCut.get<SLOPE_32>().coefficients = *cutCoeffs[2];
-            rightLowCut.setBypassed<SLOPE_32>(false);
-            break;
-        }
-        case SLOPE_48:
-        {
-            *rightLowCut.get<SLOPE_12>().coefficients = *cutCoeffs[0];
-            rightLowCut.setBypassed<SLOPE_12>(false);
-            *rightLowCut.get<SLOPE_24>().coefficients = *cutCoeffs[1];
-            rightLowCut.setBypassed<SLOPE_24>(false);
-            *rightLowCut.get<SLOPE_32>().coefficients = *cutCoeffs[2];
-            rightLowCut.setBypassed<SLOPE_32>(false);
-            *rightLowCut.get<SLOPE_48>().coefficients = *cutCoeffs[3];
-            rightLowCut.setBypassed<SLOPE_48>(false);
-            break;
-        }
-    }
+    auto highCutCoeffs = juce::dsp::FilterDesign<float>::designIIRLowpassHighOrderButterworthMethod(chainSettings.highCutFreq,
+                                                                                                 getSampleRate(),
+                                                                                                 2 * (chainSettings.highCutSlope + 1));
+    configureCutChainCoefficients<ChainPositions::HighCut>(&leftChain, highCutCoeffs, chainSettings.highCutSlope);
+    configureCutChainCoefficients<ChainPositions::HighCut>(&rightChain, highCutCoeffs, chainSettings.highCutSlope);
     
     juce::dsp::AudioBlock<float> block(buffer);
     
@@ -490,6 +306,51 @@ juce::AudioProcessorValueTreeState::ParameterLayout MimiEQAudioProcessor::create
                                                             0));
     
     return layout;
+}
+
+void MimiEQAudioProcessor::configurePeakChainCoefficients(const double& sampleRate, const ChainSettings& chainSettings) {
+    auto peakCoeffs = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate,
+                                                                          chainSettings.peakFreq,
+                                                                          chainSettings.peakQuality,
+                                                                          juce::Decibels::decibelsToGain(chainSettings.peakGainDb));
+    
+    *leftChain.get<ChainPositions::Peak>().coefficients = *peakCoeffs;
+    *rightChain.get<ChainPositions::Peak>().coefficients = *peakCoeffs;
+}
+
+template <ChainPositions P, typename Coefficients>
+void MimiEQAudioProcessor::configureCutChainCoefficients(MonoChain* chain, const Coefficients& cutCoeffs, const Slope& cutSlope) {
+    auto& cut = chain->get<P>();
+    
+    // start by allowing all of them through
+    cut.template setBypassed<SLOPE_12>(true);
+    cut.template setBypassed<SLOPE_24>(true);
+    cut.template setBypassed<SLOPE_32>(true);
+    cut.template setBypassed<SLOPE_48>(true);
+    
+    // fall through because the slopes are cumulative
+    switch (cutSlope) {
+        case SLOPE_48:
+        {
+            *cut.template get<SLOPE_48>().coefficients = *cutCoeffs[SLOPE_48];
+            cut.template setBypassed<SLOPE_48>(false);
+        }
+        case SLOPE_32:
+        {
+            *cut.template get<SLOPE_32>().coefficients = *cutCoeffs[SLOPE_32];
+            cut.template setBypassed<SLOPE_32>(false);
+        }
+        case SLOPE_24:
+        {
+            *cut.template get<SLOPE_24>().coefficients = *cutCoeffs[SLOPE_24];
+            cut.template setBypassed<SLOPE_24>(false);
+        }
+        case SLOPE_12:
+        {
+            *cut.template get<SLOPE_12>().coefficients = *cutCoeffs[SLOPE_12];
+            cut.template setBypassed<SLOPE_12>(false);
+        }
+    }
 }
 
 //==============================================================================
