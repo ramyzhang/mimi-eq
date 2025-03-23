@@ -120,25 +120,7 @@ void MimiEQAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
     leftChain.prepare(spec);
     rightChain.prepare(spec);
     
-    auto chainSettings = getChainSettings(apvts);
-    // creates a filter out of the current settings of the GUI
-    configurePeakChainCoefficients(sampleRate, chainSettings);
-    
-    // we have four slope options
-    // the highpass butterworth filter function requires you to submit an "order" of filter
-    // and will return one filter for each multiple of 2
-    // hence we multiply the slope index by 2
-    auto lowCutCoeffs = juce::dsp::FilterDesign<float>::designIIRHighpassHighOrderButterworthMethod(chainSettings.lowCutFreq,
-                                                                                                    sampleRate,
-                                                                                                    2 * (chainSettings.lowCutSlope + 1));
-    configureCutChainCoefficients<ChainPositions::LowCut>(&leftChain, lowCutCoeffs, chainSettings.lowCutSlope);
-    configureCutChainCoefficients<ChainPositions::LowCut>(&rightChain, lowCutCoeffs, chainSettings.lowCutSlope);
-    
-    auto highCutCoeffs = juce::dsp::FilterDesign<float>::designIIRLowpassHighOrderButterworthMethod(chainSettings.highCutFreq,
-                                                                                                    sampleRate,
-                                                                                                    2 * (chainSettings.highCutSlope + 1));
-    configureCutChainCoefficients<ChainPositions::HighCut>(&leftChain, highCutCoeffs, chainSettings.highCutSlope);
-    configureCutChainCoefficients<ChainPositions::HighCut>(&rightChain, highCutCoeffs, chainSettings.highCutSlope);
+    updateFilters();
 }
 
 void MimiEQAudioProcessor::releaseResources()
@@ -189,21 +171,7 @@ void MimiEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
         buffer.clear (i, 0, buffer.getNumSamples());
     
     // always update the parameter coefficients first before processing the audio
-    auto chainSettings = getChainSettings(apvts);
-    
-    // creates a filter out of the current settings of the GUI
-    configurePeakChainCoefficients(getSampleRate(), chainSettings);
-    auto lowCutCoeffs = juce::dsp::FilterDesign<float>::designIIRHighpassHighOrderButterworthMethod(chainSettings.lowCutFreq,
-                                                                                                 getSampleRate(),
-                                                                                                 2 * (chainSettings.lowCutSlope + 1));
-    configureCutChainCoefficients<ChainPositions::LowCut>(&leftChain, lowCutCoeffs, chainSettings.lowCutSlope);
-    configureCutChainCoefficients<ChainPositions::LowCut>(&rightChain, lowCutCoeffs, chainSettings.lowCutSlope);
-    
-    auto highCutCoeffs = juce::dsp::FilterDesign<float>::designIIRLowpassHighOrderButterworthMethod(chainSettings.highCutFreq,
-                                                                                                 getSampleRate(),
-                                                                                                 2 * (chainSettings.highCutSlope + 1));
-    configureCutChainCoefficients<ChainPositions::HighCut>(&leftChain, highCutCoeffs, chainSettings.highCutSlope);
-    configureCutChainCoefficients<ChainPositions::HighCut>(&rightChain, highCutCoeffs, chainSettings.highCutSlope);
+    updateFilters();
     
     juce::dsp::AudioBlock<float> block(buffer);
     
@@ -250,12 +218,26 @@ void MimiEQAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
     // You should use this method to store your parameters in the memory block.
     // You could do that either as raw data, or use the XML or ValueTree classes
     // as intermediaries to make it easy to save and load complex data.
+    
+    // state member is an instance of Juce Value Tree
+    // we can use a memory output stream to write the apvts state to the memory block
+    // because it serializes in memory super easily!
+    
+    juce::MemoryOutputStream mos(destData, true);
+    apvts.state.writeToStream(mos);
 }
 
 void MimiEQAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
+    
+    // use value tree helper function!
+    auto tree = juce::ValueTree::readFromData(data, sizeInBytes);
+    if (tree.isValid()) {
+        apvts.replaceState(tree);
+        updateFilters();
+    }
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout MimiEQAudioProcessor::createParameterLayout ()
@@ -317,6 +299,26 @@ void MimiEQAudioProcessor::configurePeakChainCoefficients(const double& sampleRa
     *leftChain.get<ChainPositions::Peak>().coefficients = *peakCoeffs;
     *rightChain.get<ChainPositions::Peak>().coefficients = *peakCoeffs;
 }
+
+void MimiEQAudioProcessor::updateFilters() { 
+    auto chainSettings = getChainSettings(apvts);
+    
+    // creates a filter out of the current settings of the GUI
+    configurePeakChainCoefficients(getSampleRate(), chainSettings);
+    
+    auto lowCutCoeffs = juce::dsp::FilterDesign<float>::designIIRHighpassHighOrderButterworthMethod(chainSettings.lowCutFreq,
+                                                                                                 getSampleRate(),
+                                                                                                 2 * (chainSettings.lowCutSlope + 1));
+    configureCutChainCoefficients<ChainPositions::LowCut>(&leftChain, lowCutCoeffs, chainSettings.lowCutSlope);
+    configureCutChainCoefficients<ChainPositions::LowCut>(&rightChain, lowCutCoeffs, chainSettings.lowCutSlope);
+    
+    auto highCutCoeffs = juce::dsp::FilterDesign<float>::designIIRLowpassHighOrderButterworthMethod(chainSettings.highCutFreq,
+                                                                                                 getSampleRate(),
+                                                                                                 2 * (chainSettings.highCutSlope + 1));
+    configureCutChainCoefficients<ChainPositions::HighCut>(&leftChain, highCutCoeffs, chainSettings.highCutSlope);
+    configureCutChainCoefficients<ChainPositions::HighCut>(&rightChain, highCutCoeffs, chainSettings.highCutSlope);
+}
+
 
 template <ChainPositions P, typename Coefficients>
 void MimiEQAudioProcessor::configureCutChainCoefficients(MonoChain* chain, const Coefficients& cutCoeffs, const Slope& cutSlope) {

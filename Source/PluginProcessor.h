@@ -101,6 +101,8 @@ private:
     template <ChainPositions P, typename Coefficients>
     void configureCutChainCoefficients(MonoChain* chain, const Coefficients& cutCoeffs, const Slope& cutSlope);
     
+    void updateFilters(); // update filter coefficients from apvts
+    
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MimiEQAudioProcessor)
 };
